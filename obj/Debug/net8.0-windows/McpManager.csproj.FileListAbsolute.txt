@@ -1,0 +1,16 @@
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.MainForm.resources
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.csproj.GenerateResource.cache
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.AssemblyInfoInputs.cache
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.AssemblyInfo.cs
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.csproj.CoreCompileInputs.cache
+c:\Users\sm937\OneDrive\Desktop\McpManager\bin\Debug\net8.0-windows\McpManager.exe
+c:\Users\sm937\OneDrive\Desktop\McpManager\bin\Debug\net8.0-windows\McpManager.deps.json
+c:\Users\sm937\OneDrive\Desktop\McpManager\bin\Debug\net8.0-windows\McpManager.runtimeconfig.json
+c:\Users\sm937\OneDrive\Desktop\McpManager\bin\Debug\net8.0-windows\McpManager.dll
+c:\Users\sm937\OneDrive\Desktop\McpManager\bin\Debug\net8.0-windows\McpManager.pdb
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.dll
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\refint\McpManager.dll
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.pdb
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\McpManager.genruntimeconfig.cache
+c:\Users\sm937\OneDrive\Desktop\McpManager\obj\Debug\net8.0-windows\ref\McpManager.dll

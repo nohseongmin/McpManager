@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "J+i97ZiisN0=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\sm937\\OneDrive\\Desktop\\McpManager\\McpManager.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\sm937\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.20\\microsoft.netcore.app.ref.8.0.20.nupkg.sha512",
+    "C:\\Users\\sm937\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.20\\microsoft.windowsdesktop.app.ref.8.0.20.nupkg.sha512",
+    "C:\\Users\\sm937\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.20\\microsoft.aspnetcore.app.ref.8.0.20.nupkg.sha512",
+    "C:\\Users\\sm937\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.20\\microsoft.netcore.app.host.win-x64.8.0.20.nupkg.sha512"
+  ],
+  "logs": []
+}
