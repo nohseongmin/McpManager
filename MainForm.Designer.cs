@@ -7,6 +7,7 @@ namespace McpManager
     private System.Windows.Forms.Button btnInstallNode;
     private System.Windows.Forms.Button btnInstallGemini;
     private System.Windows.Forms.Button btnRunGemini;
+    private System.Windows.Forms.Button btnManual;
     private System.Windows.Forms.GroupBox groupBoxMcp;
     private System.Windows.Forms.DataGridView dgvMcpList;
     private System.Windows.Forms.ComboBox comboBoxLang;
@@ -28,10 +29,11 @@ namespace McpManager
             this.btnInstallNode = new System.Windows.Forms.Button();
             this.btnInstallGemini = new System.Windows.Forms.Button();
             this.btnRunGemini = new System.Windows.Forms.Button();
+            this.btnManual = new System.Windows.Forms.Button();
             this.groupBoxMcp = new System.Windows.Forms.GroupBox();
             this.dgvMcpList = new System.Windows.Forms.DataGridView();
-        this.comboBoxLang = new System.Windows.Forms.ComboBox();
-        this.lblStatus = new System.Windows.Forms.Label();
+            this.comboBoxLang = new System.Windows.Forms.ComboBox();
+            this.lblStatus = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // groupBoxGemini
@@ -39,6 +41,7 @@ namespace McpManager
             this.groupBoxGemini.Controls.Add(this.btnInstallNode);
             this.groupBoxGemini.Controls.Add(this.btnInstallGemini);
             this.groupBoxGemini.Controls.Add(this.btnRunGemini);
+            this.groupBoxGemini.Controls.Add(this.btnManual);
             this.groupBoxGemini.Location = new System.Drawing.Point(12, 12);
             this.groupBoxGemini.Name = "groupBoxGemini";
             this.groupBoxGemini.Size = new System.Drawing.Size(560, 70);
@@ -54,27 +57,37 @@ namespace McpManager
             this.btnInstallNode.TabIndex = 0;
             this.btnInstallNode.Text = "Node.js 설치";
             this.btnInstallNode.UseVisualStyleBackColor = true;
+            this.btnInstallNode.Click += new System.EventHandler(this.BtnInstallNode_Click);
             // 
             // btnInstallGemini
             // 
             this.btnInstallGemini.Location = new System.Drawing.Point(122, 25);
             this.btnInstallGemini.Name = "btnInstallGemini";
-            this.btnInstallGemini.Size = new System.Drawing.Size(120, 30);
+            this.btnInstallGemini.Size = new System.Drawing.Size(140, 30);
             this.btnInstallGemini.TabIndex = 1;
             this.btnInstallGemini.Text = "Gemini CLI 설치";
             this.btnInstallGemini.UseVisualStyleBackColor = true;
+            this.btnInstallGemini.Click += new System.EventHandler(this.BtnInstallGemini_Click);
             // 
             // btnRunGemini
             // 
-            this.btnRunGemini.Location = new System.Drawing.Point(248, 25);
+            this.btnRunGemini.Location = new System.Drawing.Point(268, 25);
             this.btnRunGemini.Name = "btnRunGemini";
             this.btnRunGemini.Size = new System.Drawing.Size(120, 30);
             this.btnRunGemini.TabIndex = 2;
             this.btnRunGemini.Text = "Gemini CLI 실행";
             this.btnRunGemini.UseVisualStyleBackColor = true;
-            this.btnInstallNode.Click += new System.EventHandler(this.BtnInstallNode_Click);
-            this.btnInstallGemini.Click += new System.EventHandler(this.BtnInstallGemini_Click);
             this.btnRunGemini.Click += new System.EventHandler(this.BtnRunGemini_Click);
+            //
+            // btnManual
+            //
+            this.btnManual.Location = new System.Drawing.Point(394, 25);
+            this.btnManual.Name = "btnManual";
+            this.btnManual.Size = new System.Drawing.Size(120, 30);
+            this.btnManual.TabIndex = 3;
+            this.btnManual.Text = "매뉴얼";
+            this.btnManual.UseVisualStyleBackColor = true;
+            this.btnManual.Click += new System.EventHandler(this.BtnManual_Click);
             // 
             // groupBoxMcp
             // 
@@ -119,8 +132,6 @@ namespace McpManager
             this.lblStatus.Size = new System.Drawing.Size(39, 15);
             this.lblStatus.TabIndex = 3;
             this.lblStatus.Text = "준비";
-            // 
-        this.Controls.Add(this.lblStatus);
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;

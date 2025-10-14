@@ -25,10 +25,14 @@ namespace McpManager
                 _mcpServers = new System.Collections.Generic.List<McpServerInfo>
                 {
                     new McpServerInfo { Name = "Github MCP", PackageId = "@smithery-ai/github" },
-                    new McpServerInfo { Name = "Google Drive MCP", PackageId = "@smithery-ai/google-drive" }
+                    new McpServerInfo { Name = "Google Drive MCP", PackageId = "@smithery-ai/google-drive" },
+                    new McpServerInfo { Name = "Slack MCP", PackageId = "@smithery-ai/slack" }
                 };
 
                 InitializeComponent();
+                // 폼 로드 시 초기 상태를 반영하도록 이벤트 연결
+                this.Load += MainForm_Load;
+
                 // 언어 콤보박스 기본값을 한국어로 고정
                 if (comboBoxLang.Items.Count > 0)
                     comboBoxLang.SelectedIndex = 0;
@@ -90,19 +94,45 @@ namespace McpManager
             lblStatus.Text = $"{mcpServer.Name} 설치 중...";
             row.Cells[2].Value = "설치중...";
 
-            string command = $"npx -y @smithery/cli@latest install {mcpServer.PackageId} --client gemini-cli --key {apiKey}";
-
-            var result = await RunProcessAsync("cmd.exe", $"/c {command}");
-
-            if (result.ExitCode == 0)
+            try
             {
+                string settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".gemini", "settings.json");
+                var root = new System.Collections.Generic.Dictionary<string, object>();
+
+                if (File.Exists(settingsPath))
+                {
+                    string json = await File.ReadAllTextAsync(settingsPath);
+                    if (!string.IsNullOrWhiteSpace(json))
+                    {
+                        root = JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, object>>(json, new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+                    }
+                }
+
+                var mcpServersDict = new System.Collections.Generic.Dictionary<string, object>();
+                if (root.ContainsKey("mcpServers") && root["mcpServers"] is JsonElement mcpServersElement)
+                {
+                    mcpServersDict = mcpServersElement.Deserialize<System.Collections.Generic.Dictionary<string, object>>() ?? new System.Collections.Generic.Dictionary<string, object>();
+                }
+
+                mcpServersDict[mcpServer.PackageId] = new
+                {
+                    httpUrl = "https://api.githubcopilot.com/mcp/",
+                    trust = true,
+                    headers = new { Authorization = $"Bearer {apiKey}" }
+                };
+
+                root["mcpServers"] = mcpServersDict;
+
+                var newJson = JsonSerializer.Serialize(root, new JsonSerializerOptions { WriteIndented = true });
+                await File.WriteAllTextAsync(settingsPath, newJson);
+
                 lblStatus.Text = $"{mcpServer.Name} 설치 완료.";
                 row.Cells[1].Value = "설치됨";
                 row.Cells[2].Value = "삭제";
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show($"{mcpServer.Name} 설치 실패.\n오류: {result.Error}", "설치 오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"{mcpServer.Name} 설치 실패.\n오류: {ex.Message}", "설치 오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lblStatus.Text = "준비";
                 row.Cells[2].Value = "설치"; // Revert button
             }
@@ -121,15 +151,18 @@ namespace McpManager
                 if (File.Exists(settingsPath))
                 {
                     string json = File.ReadAllText(settingsPath);
+                    var root = JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, object>>(json, new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
 
-                    var options = new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
-                    var settings = JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, JsonElement>>(json, options);
-
-                    if (settings != null && settings.ContainsKey(mcpServer.PackageId))
+                    if (root != null && root.ContainsKey("mcpServers"))
                     {
-                        settings.Remove(mcpServer.PackageId);
-                        var newJson = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
-                        File.WriteAllText(settingsPath, newJson);
+                        var mcpServers = (System.Collections.Generic.Dictionary<string, object>)((JsonElement)root["mcpServers"]).Deserialize<System.Collections.Generic.Dictionary<string, object>>();
+                        if (mcpServers.ContainsKey(mcpServer.PackageId))
+                        {
+                            mcpServers.Remove(mcpServer.PackageId);
+                            root["mcpServers"] = mcpServers;
+                            var newJson = JsonSerializer.Serialize(root, new JsonSerializerOptions { WriteIndented = true });
+                            File.WriteAllText(settingsPath, newJson);
+                        }
                     }
                 }
                 lblStatus.Text = $"{mcpServer.Name} 삭제 완료.";
@@ -195,28 +228,30 @@ namespace McpManager
             try
             {
                 string json = File.ReadAllText(settingsPath);
-                var options = new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
-                var settings = JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, JsonElement>>(json, options);
+                if (string.IsNullOrWhiteSpace(json)) return;
 
-                if (settings == null) return;
+                var doc = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
 
-                foreach (DataGridViewRow row in dgvMcpList.Rows)
+                if (doc.RootElement.TryGetProperty("mcpServers", out var mcpServersElement))
                 {
-                    string? mcpName = row.Cells[0].Value?.ToString();
-                    if (string.IsNullOrEmpty(mcpName)) continue;
-
-                    var mcpServer = _mcpServers.Find(s => s.Name == mcpName);
-                    if (mcpServer == null) continue;
-
-                    if (settings.ContainsKey(mcpServer.PackageId))
+                    foreach (DataGridViewRow row in dgvMcpList.Rows)
                     {
-                        row.Cells[1].Value = "설치됨";
-                        row.Cells[2].Value = "삭제";
-                    }
-                    else
-                    {
-                        row.Cells[1].Value = "미설치";
-                        row.Cells[2].Value = "설치";
+                        string? mcpName = row.Cells[0].Value?.ToString();
+                        if (string.IsNullOrEmpty(mcpName)) continue;
+
+                        var mcpServer = _mcpServers.Find(s => s.Name == mcpName);
+                        if (mcpServer == null) continue;
+
+                        if (mcpServersElement.TryGetProperty(mcpServer.PackageId, out _))
+                        {
+                            row.Cells[1].Value = "설치됨";
+                            row.Cells[2].Value = "삭제";
+                        }
+                        else
+                        {
+                            row.Cells[1].Value = "미설치";
+                            row.Cells[2].Value = "설치";
+                        }
                     }
                 }
             }
@@ -276,7 +311,7 @@ namespace McpManager
         private const string NodeVersion = "v22.20.0";
         private const string NodeInstallerUrl = "https://nodejs.org/dist/v22.20.0/node-v22.20.0-x64.msi";
 
-        private void BtnInstallNode_Click(object sender, EventArgs e)
+        private async void BtnInstallNode_Click(object sender, EventArgs e)
         {
             try
             {
@@ -287,59 +322,73 @@ namespace McpManager
                     MessageBox.Show("현재 폴더에 .msi 파일이 없습니다.", "설치 파일 없음", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-                var psi = new ProcessStartInfo("msiexec.exe", $"/i \"{msiPath}\" /quiet")
+
+                lblStatus.Text = "Node.js 설치 중... (관리자 권한)";
+                btnInstallNode.Enabled = false;
+
+                var exitCode = await RunElevatedProcessAsync("msiexec.exe", $"/i \"{msiPath}\" /quiet /norestart");
+
+                if (exitCode == 0)
                 {
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-                Process.Start(psi);
-                lblStatus.Text = "Node.js 설치 파일 실행됨 (관리자 권한)";
+                    lblStatus.Text = "Node.js 설치 완료.";
+                }
+                else if (exitCode == 1223) // UAC Cancelled
+                {
+                    lblStatus.Text = "Node.js 설치가 사용자에 의해 취소되었습니다.";
+                }
+                else
+                {
+                    lblStatus.Text = $"Node.js 설치 실패 (코드: {exitCode}).";
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Node.js 설치 실행 오류: " + ex.Message, "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                lblStatus.Text = "준비";
+            }
+            finally
+            {
+                btnInstallNode.Enabled = true;
+                await CheckPrerequisites();
             }
         }
 
-        private void BtnInstallGemini_Click(object sender, EventArgs e)
+        private async void BtnInstallGemini_Click(object sender, EventArgs e)
         {
             try
             {
-                string psCmd = @"
-$signature = @'
-[DllImport(""user32.dll"", SetLastError = true)]
-public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
-'@
-$user32 = Add-Type -MemberDefinition $signature -Name ""User32"" -Namespace ""Win32"" -PassThru
-$hwnd = (Get-Process -Id $PID).MainWindowHandle
-if ($hwnd -ne [System.IntPtr]::Zero) {
-    Add-Type -AssemblyName System.Windows.Forms
-    $screen = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
-    $x = ($screen.Width - 800) / 2
-    $y = ($screen.Height - 600) / 2
-    $user32::SetWindowPos($hwnd, 0, $x, $y, 800, 600, 0)
-}
+                lblStatus.Text = "Gemini CLI 설치 중... (PowerShell 관리자 창)";
+                btnInstallGemini.Enabled = false;
 
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-npm install -g @google/gemini-cli
-Write-Host ""Installation complete. Press any key to exit.""
-$Host.UI.RawUI.ReadKey(""NoEcho,IncludeKeyDown"") | Out-Null
-";
-
+                string psCmd = "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; npm install -g @google/gemini-cli";
                 var bytes = System.Text.Encoding.Unicode.GetBytes(psCmd);
                 var encodedCommand = Convert.ToBase64String(bytes);
 
-                var psi = new ProcessStartInfo("powershell.exe", $"-NoExit -EncodedCommand {encodedCommand}")
+                var exitCode = await RunElevatedProcessAsync("powershell.exe", $"-Command \"Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; npm install -g @google/gemini-cli\"");
+
+                if (exitCode == 0)
                 {
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-                Process.Start(psi);
-                lblStatus.Text = "Gemini CLI 설치 명령 실행됨 (PowerShell 관리자 창)";
+                    lblStatus.Text = "Gemini CLI 설치 완료.";
+                }
+                else if (exitCode == 1223) // UAC Cancelled
+                {
+                    lblStatus.Text = "Gemini CLI 설치가 사용자에 의해 취소되었습니다.";
+                }
+                else
+                {
+                    // Note: PowerShell might not return a specific error code for npm failures.
+                    // We rely on IsGeminiCliInstalled check.
+                    lblStatus.Text = "Gemini CLI 설치가 완료되었거나 실패했습니다.";
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Gemini CLI 설치 실행 오류: " + ex.Message, "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                lblStatus.Text = "준비";
+            }
+            finally
+            {
+                await CheckPrerequisites();
             }
         }
 
@@ -347,7 +396,7 @@ $Host.UI.RawUI.ReadKey(""NoEcho,IncludeKeyDown"") | Out-Null
         {
             try
             {
-                var psi = new ProcessStartInfo("powershell.exe", "-NoExit -Command gemini")
+                var psi = new ProcessStartInfo("powershell.exe", "-Command gemini")
                 {
                     UseShellExecute = true
                 };
@@ -357,6 +406,18 @@ $Host.UI.RawUI.ReadKey(""NoEcho,IncludeKeyDown"") | Out-Null
             catch (Exception ex)
             {
                 MessageBox.Show("Gemini CLI 실행 오류: " + ex.Message, "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void BtnManual_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo("https://github.com/nohseongmin/McpManager/blob/main/readme.md") { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("매뉴얼 링크 열기 오류: " + ex.Message, "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -393,11 +454,11 @@ $Host.UI.RawUI.ReadKey(""NoEcho,IncludeKeyDown"") | Out-Null
 
             process.Exited += (sender, args) =>
             {
-                tcs.SetResult(new ProcessResult 
-                { 
-                    ExitCode = process.ExitCode, 
-                    Output = stdOut.ToString(), 
-                    Error = stdErr.ToString() 
+                tcs.SetResult(new ProcessResult
+                {
+                    ExitCode = process.ExitCode,
+                    Output = stdOut.ToString(),
+                    Error = stdErr.ToString()
                 });
                 process.Dispose();
             };
@@ -408,7 +469,7 @@ $Host.UI.RawUI.ReadKey(""NoEcho,IncludeKeyDown"") | Out-Null
 
             return tcs.Task;
         }
-        
+
         private Task<int> RunElevatedProcessAsync(string fileName, string arguments)
         {
             var tcs = new TaskCompletionSource<int>();
@@ -420,7 +481,9 @@ $Host.UI.RawUI.ReadKey(""NoEcho,IncludeKeyDown"") | Out-Null
                     FileName = fileName,
                     Arguments = arguments,
                     UseShellExecute = true,
-                    Verb = "runas"
+                    Verb = "runas",
+                    WindowStyle = ProcessWindowStyle.Hidden, // 창 숨기기
+                    CreateNoWindow = true, // 창 생성 안함
                 },
                 EnableRaisingEvents = true
             };
@@ -435,13 +498,63 @@ $Host.UI.RawUI.ReadKey(""NoEcho,IncludeKeyDown"") | Out-Null
             {
                 process.Start();
             }
-            catch (System.ComponentModel.Win32Exception)
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
             {
                 // UAC dialog was cancelled by the user.
-                tcs.SetResult(1223); 
+                tcs.SetResult(1223);
+            }
+            catch(Exception)
+            {
+                tcs.SetResult(-1); // Other errors
             }
 
+
             return tcs.Task;
+        }
+
+        // 폼이 로드될 때 MCP 상태를 확인함
+        private async void MainForm_Load(object? sender, EventArgs e)
+        {
+            try
+            {
+                await CheckPrerequisites();
+                CheckMcpStatus();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"초기 MCP 상태 확인 중 오류가 발생했습니다: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task CheckPrerequisites()
+        {
+            bool nodeInstalled = await IsNodeInstalled();
+            // Gemini CLI 설치 여부는 버튼 활성화에 직접적인 영향을 주지 않도록 수정
+            // 대신, 설치 후 상태를 다시 확인하여 UI 업데이트
+            bool geminiCliInstalled = await IsGeminiCliInstalledAsync();
+
+            // Node.js 설치 여부에 따라 Gemini CLI 설치 버튼 활성화
+            btnInstallGemini.Enabled = nodeInstalled;
+
+            // Node.js와 Gemini CLI가 모두 설치되어야 실행 버튼 활성화
+            btnRunGemini.Enabled = nodeInstalled && geminiCliInstalled;
+
+            // 설치 상태에 따라 Node.js 버튼 텍스트 변경
+            btnInstallNode.Text = nodeInstalled ? "Node.js (설치됨)" : "Node.js 설치";
+            btnInstallGemini.Text = geminiCliInstalled ? "Gemini CLI (설치됨)" : "Gemini CLI 설치";
+        }
+
+
+        private async Task<bool> IsNodeInstalled()
+        {
+            var result = await RunProcessAsync("cmd.exe", "/c where node");
+            return result.ExitCode == 0 && !string.IsNullOrWhiteSpace(result.Output);
+        }
+
+        private async Task<bool> IsGeminiCliInstalledAsync()
+        {
+            var result = await RunProcessAsync("cmd.exe", "/c where gemini");
+            return result.ExitCode == 0 && !string.IsNullOrWhiteSpace(result.Output);
         }
     }
 
@@ -458,3 +571,4 @@ $Host.UI.RawUI.ReadKey(""NoEcho,IncludeKeyDown"") | Out-Null
         public string Error { get; set; } = string.Empty;
     }
 }
+// No code changes required to run the project locally.
