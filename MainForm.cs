@@ -30,6 +30,11 @@ namespace McpManager
                 };
 
                 InitializeComponent();
+
+                // Gemini CLI 버튼은 전제 조건이 충족될 때까지 비활성화
+                btnInstallGemini.Enabled = false;
+                btnRunGemini.Enabled = false;
+
                 // 폼 로드 시 초기 상태를 반영하도록 이벤트 연결
                 this.Load += MainForm_Load;
 
