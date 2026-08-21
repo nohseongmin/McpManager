@@ -365,10 +365,6 @@ namespace McpManager
                 lblStatus.Text = "Gemini CLI 설치 중... (PowerShell 관리자 창)";
                 btnInstallGemini.Enabled = false;
 
-                string psCmd = "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; npm install -g @google/gemini-cli";
-                var bytes = System.Text.Encoding.Unicode.GetBytes(psCmd);
-                var encodedCommand = Convert.ToBase64String(bytes);
-
                 var exitCode = await RunElevatedProcessAsync("powershell.exe", $"-Command \"Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; npm install -g @google/gemini-cli\"");
 
                 if (exitCode == 0)
