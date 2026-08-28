@@ -1,6 +1,6 @@
 # McpManager: 사용자 매뉴얼
 
-McpManager는 Gemini CLI와 관련 MCP(Multi-Capability Pack) 서버의 설치 및 관리를 간소화하는 Windows 데스크톱 애플리케이션입니다. 이 매뉴얼은 McpManager의 모든 기능을 효과적으로 사용하는 방법을 안내합니다.
+McpManager는 Gemini CLI와 관련 MCP(Model Context Protocol) 서버의 설치 및 관리를 간소화하는 Windows 데스크톱 애플리케이션입니다. 이 매뉴얼은 McpManager의 모든 기능을 효과적으로 사용하는 방법을 안내합니다.
 
 ## 목차
 
